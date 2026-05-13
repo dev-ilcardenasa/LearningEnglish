@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learning English</title>
+  
+  <!-- Fuentes -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  
+  <!-- Estilos Externos -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- NAVEGACIÓN SUPERIOR -->
+  <nav>
+    <button class="nav-tab active" id="nav-collection" onclick="showPage('collection')">
+      <span class="nav-dot"></span>
+      MIS FRASES
+    </button>
+    <button class="nav-tab" id="nav-yarn" onclick="showPage('yarn')">
+      <span class="nav-dot"></span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0">
+        <polygon points="23 7 16 12 23 17 23 7" />
+        <rect x="1" y="5" width="15" height="14" rx="2" />
+      </svg>
+      Learning English
+    </button>
+  </nav>
+
+  <!-- PÁGINA 1: MI COLECCIÓN -->
+  <div class="page active" id="page-collection">
+    <header>
+      <div class="pill-tag">✦ Tu colección personal</div>
+      <h1>Learning English</h1>
+    </header>
+
+    <div class="col-main">
+      <!-- Herramientas de búsqueda y filtrado -->
+      <div class="toolbar">
+        <div class="search-wrap">
+          <input type="text" id="search" placeholder="Buscar frases…" oninput="renderQuotes()" />
+        </div>
+        <select id="filter-cat" onchange="renderQuotes()">
+          <option value="">Todas las categorías</option>
+        </select>
+      </div>
+
+      <!-- Contador y Cuadrícula de Frases -->
+      <div id="counter" class="counter"></div>
+      <div id="grid" class="quotes-grid"></div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 2: LEARNING ENGLISH (GETYARN IFRAME) -->
+  <div class="page" id="page-yarn">
+    <div class="yarn-main">
+      <iframe id="embed-iframe" class="embed-iframe" src="https://getyarn.io" allow="autoplay; encrypted-media" allowfullscreen=""></iframe>
+    </div>
+  </div>
+
+  <!-- BOTÓN FLOTANTE (AGREGAR FRASE) -->
+  <button id="fab" onclick="openModal()" aria-label="Agregar frase">＋</button>
+
+  <!-- MODAL PARA AGREGAR/EDITAR -->
+  <div class="modal-overlay" id="modal-overlay" onclick="overlayClick(event)">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="close-btn" onclick="closeModal()">✕</button>
+      <h2 id="modal-title">Nueva <span>frase</span></h2>
+      
+      <input type="hidden" id="edit-id" value="" />
+      
+      <div class="field-group">
+        <textarea id="inp-text" placeholder="Escribe o pega tu frase aquí…" maxlength="600"></textarea>
+        <input type="text" id="inp-category" placeholder="Categoría (ej: Formal, Motivación, Casual…)" maxlength="40" />
+        
+        <div class="modal-actions">
+          <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+          <button class="btn btn-primary" id="modal-save-btn" onclick="saveQuote()">＋ Guardar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICACIONES TOAST -->
+  <div id="toast"></div>
+
+  <!-- Script Externo -->
+  <script src="script.js"></script>
+</body>
+</html>

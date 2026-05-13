@@ -1,0 +1,294 @@
+/**
+ * CONFIGURACIÓN Y VARIABLES GLOBALES
+ */
+const KEY = 'mf_quotes_v2';
+let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
+let speaking = null;
+
+// Guardar en LocalStorage
+function save() {
+  localStorage.setItem(KEY, JSON.stringify(quotes));
+}
+
+// Iconos SVG
+const COPY_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+const CHECK_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
+const EDIT_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+const DEL_SVG = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>`;
+const PLAY_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>`;
+
+/**
+ * NAVEGACIÓN
+ */
+function showPage(page) {
+  // Ocultar todas las páginas y desactivar tabs
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+
+  // Activar página y tab seleccionada
+  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('nav-' + page).classList.add('active');
+
+  // Mostrar/ocultar el botón flotante (FAB) según la página
+  document.getElementById('fab').style.display = page === 'collection' ? 'flex' : 'none';
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * INTEGRACIÓN CON GETYARN
+ */
+function openClip(id) {
+  const q = quotes.find(x => x.id === id);
+  if (!q) return;
+
+  // Copiar frase al portapapeles
+  navigator.clipboard.writeText(q.text).catch(() => { });
+
+  // Cambiar a la pestaña de Learning English
+  showPage('yarn');
+
+  // Cargar búsqueda en el iframe
+  const url = 'https://getyarn.io/?term=' + encodeURIComponent(q.text);
+  document.getElementById('embed-iframe').src = url;
+
+  showToast('📋 Frase copiada — abriendo clips...');
+}
+
+/**
+ * GESTIÓN DE FRASES (CRUD)
+ */
+function saveQuote() {
+  const text = document.getElementById('inp-text').value.trim();
+  const category = document.getElementById('inp-category').value.trim() || 'General';
+  const editId = document.getElementById('edit-id').value;
+
+  if (!text) {
+    showToast('⚠️ Escribe una frase primero');
+    return;
+  }
+
+  if (editId) {
+    // Editar frase existente
+    const idx = quotes.findIndex(q => q.id === Number(editId));
+    if (idx !== -1) {
+      quotes[idx].text = text;
+      quotes[idx].category = category;
+    }
+    save();
+    closeModal();
+    renderQuotes();
+    showToast('✏️ Frase actualizada');
+  } else {
+    // Guardar nueva frase
+    quotes.unshift({
+      id: Date.now(),
+      text,
+      category,
+      date: new Date().toLocaleDateString('es-ES')
+    });
+    save();
+    closeModal();
+    renderQuotes();
+    showToast('✅ Frase guardada');
+  }
+}
+
+function deleteQuote(id) {
+  if (!confirm('¿Eliminar esta frase?')) return;
+  stopSpeaking();
+  quotes = quotes.filter(q => q.id !== id);
+  save();
+  renderQuotes();
+  showToast('🗑️ Eliminada');
+}
+
+function copyText(id) {
+  const q = quotes.find(x => x.id === id);
+  if (!q) return;
+
+  navigator.clipboard.writeText(q.text).then(() => {
+    const btn = document.getElementById('copy-' + id);
+    if (btn) {
+      btn.classList.add('copied');
+      btn.innerHTML = CHECK_SVG;
+      setTimeout(() => {
+        btn.classList.remove('copied');
+        btn.innerHTML = COPY_SVG;
+      }, 1800);
+    }
+    showToast('📋 Copiado');
+  }).catch(() => showToast('⚠️ No se pudo copiar'));
+}
+
+/**
+ * MODAL
+ */
+function openModal(editId = null) {
+  const titleEl = document.getElementById('modal-title');
+  const saveBtn = document.getElementById('modal-save-btn');
+
+  if (editId) {
+    const q = quotes.find(x => x.id === editId);
+    if (!q) return;
+    titleEl.innerHTML = 'Editar <span>frase</span>';
+    saveBtn.innerHTML = CHECK_SVG + ' Guardar cambios';
+    document.getElementById('edit-id').value = editId;
+    document.getElementById('inp-text').value = q.text;
+    document.getElementById('inp-category').value = q.category;
+  } else {
+    titleEl.innerHTML = 'Nueva <span>frase</span>';
+    saveBtn.innerHTML = '＋ Guardar';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('inp-text').value = '';
+    document.getElementById('inp-category').value = '';
+  }
+
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('inp-text').focus(), 60);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+function overlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+/**
+ * TEXT-TO-SPEECH (TTS)
+ */
+function stopSpeaking() {
+  window.speechSynthesis.cancel();
+  document.querySelectorAll('.btn-listen.playing').forEach(b => b.classList.remove('playing'));
+  document.querySelectorAll('.wave-wrap.active').forEach(w => w.classList.remove('active'));
+  speaking = null;
+}
+
+function speak(id) {
+  const q = quotes.find(x => x.id === id);
+  if (!q) return;
+
+  if (speaking === id) {
+    stopSpeaking();
+    return;
+  }
+
+  stopSpeaking();
+
+  const utt = new SpeechSynthesisUtterance(q.text);
+  utt.lang = 'en-US';
+  utt.rate = 0.88;
+
+  // Intentar seleccionar una voz en inglés
+  const voices = speechSynthesis.getVoices();
+  const en = voices.find(v => v.lang.startsWith('en') && v.localService) || voices.find(v => v.lang.startsWith('en'));
+  if (en) utt.voice = en;
+
+  speaking = id;
+  const btn = document.getElementById('btn-' + id);
+  const wave = document.getElementById('wave-' + id);
+
+  if (btn) btn.classList.add('playing');
+  if (wave) wave.classList.add('active');
+
+  utt.onend = utt.onerror = () => {
+    if (btn) btn.classList.remove('playing');
+    if (wave) wave.classList.remove('active');
+    speaking = null;
+  };
+
+  speechSynthesis.speak(utt);
+}
+
+/**
+ * RENDERIZADO DE LA INTERFAZ
+ */
+function renderQuotes() {
+  const search = document.getElementById('search').value.toLowerCase();
+  const cat = document.getElementById('filter-cat').value;
+
+  // Actualizar filtro de categorías
+  const cats = [...new Set(quotes.map(q => q.category))].sort();
+  const sel = document.getElementById('filter-cat');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">Todas las categorías</option>' +
+    cats.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
+
+  // Filtrar frases
+  const filtered = quotes.filter(q =>
+    (!search || q.text.toLowerCase().includes(search)) &&
+    (!cat || q.category === cat)
+  );
+
+  // Mostrar contador
+  document.getElementById('counter').textContent = filtered.length ? `${filtered.length} frase${filtered.length !== 1 ? 's' : ''}` : '';
+
+  const grid = document.getElementById('grid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty"><span class="emoji">${quotes.length === 0 ? '✨' : '🔎'}</span>
+      <p>${quotes.length === 0 ? 'Tu colección está vacía.<br><small>Toca <strong>＋</strong> para agregar tu primera frase.</small>' : 'Sin resultados para esa búsqueda.'}</p></div>`;
+    return;
+  }
+
+  // Renderizar tarjetas
+  grid.innerHTML = filtered.map(q => `
+    <div class="quote-card" id="card-${q.id}">
+      <div class="text-row">
+        <p class="quote-text">${escHtml(q.text)}</p>
+        <button class="btn-icon" id="copy-${q.id}" title="Copiar frase" onclick="copyText(${q.id})">${COPY_SVG}</button>
+      </div>
+      <div class="meta-row">
+        <span class="cat-badge">${escHtml(q.category)}</span>
+        <span class="lang-badge">🇺🇸 EN</span>
+        <span class="date-txt">${q.date}</span>
+      </div>
+      <div class="card-actions">
+        <button class="btn-sm btn-listen" id="btn-${q.id}" onclick="speak(${q.id})">
+          ${PLAY_SVG} Escuchar
+          <div class="wave-wrap" id="wave-${q.id}">
+            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div><div class="wave-bar"></div>
+            <div class="wave-bar"></div>
+          </div>
+        </button>
+        
+        <button class="btn-sm btn-yarn" onclick="openClip(${q.id})">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/>
+          </svg>
+          Ver clips
+        </button>      
+
+        <button class="btn-sm btn-edit" onclick="openModal(${q.id})">${EDIT_SVG}</button>
+        <button class="btn-sm btn-delete" onclick="deleteQuote(${q.id})">${DEL_SVG}</button>
+      </div>
+    </div>`).join('');
+}
+
+/**
+ * UTILIDADES
+ */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// Event Listeners
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveQuote();
+});
+
+// Inicialización
+window.speechSynthesis.onvoiceschanged = () => { };
+renderQuotes();
