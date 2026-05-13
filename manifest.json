@@ -1,7 +1,7 @@
 {
   "name": "Learning English",
   "short_name": "EngLearn",
-  "description": "Tu colección personal de frases en inglés",
+  "description": "Your personal collection of English phrases",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0f0f13",

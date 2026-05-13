@@ -21,39 +21,39 @@ const PLAY_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentC
  * NAVEGACIÓN
  */
 function showPage(page) {
-  // Ocultar todas las páginas y desactivar tabs
+  // Hide all pages and deactivate tabs
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
 
-  // Activar página y tab seleccionada
+  // Activate selected page and tab
   document.getElementById('page-' + page).classList.add('active');
   document.getElementById('nav-' + page).classList.add('active');
 
-  // Mostrar/ocultar el botón flotante (FAB) según la página
+  // Show/hide floating action button (FAB) depending on the page
   document.getElementById('fab').style.display = page === 'collection' ? 'flex' : 'none';
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 /**
- * INTEGRACIÓN CON GETYARN
+ * GETYARN INTEGRATION
  */
 function openClip(id) {
   const q = quotes.find(x => x.id === id);
   if (!q) return;
 
-  // Cambiar a la pestaña de Learning English
+  // Switch to the Learning English tab
   showPage('yarn');
 
-  // Cargar búsqueda en el iframe con la frase directamente
+  // Load search in the iframe with the phrase directly
   const url = 'https://getyarn.io/yarn-find?text=' + encodeURIComponent(q.text);
   document.getElementById('embed-iframe').src = url;
 
-  showToast('� Buscando clips...');
+  showToast('🔍 Searching clips...');
 }
 
 /**
- * GESTIÓN DE FRASES (CRUD)
+ * PHRASE MANAGEMENT (CRUD)
  */
 function saveQuote() {
   const text = document.getElementById('inp-text').value.trim();
@@ -61,12 +61,12 @@ function saveQuote() {
   const editId = document.getElementById('edit-id').value;
 
   if (!text) {
-    showToast('⚠️ Escribe una frase primero');
+    showToast('⚠️ Type a phrase first');
     return;
   }
 
   if (editId) {
-    // Editar frase existente
+    // Edit existing phrase
     const idx = quotes.findIndex(q => q.id === Number(editId));
     if (idx !== -1) {
       quotes[idx].text = text;
@@ -75,29 +75,29 @@ function saveQuote() {
     save();
     closeModal();
     renderQuotes();
-    showToast('✏️ Frase actualizada');
+    showToast('✏️ Phrase updated');
   } else {
-    // Guardar nueva frase
+    // Save new phrase
     quotes.unshift({
       id: Date.now(),
       text,
       category,
-      date: new Date().toLocaleDateString('es-ES')
+      date: new Date().toLocaleDateString('en-US')
     });
     save();
     closeModal();
     renderQuotes();
-    showToast('✅ Frase guardada');
+    showToast('✅ Phrase saved');
   }
 }
 
 function deleteQuote(id) {
-  if (!confirm('¿Eliminar esta frase?')) return;
+  if (!confirm('Delete this phrase?')) return;
   stopSpeaking();
   quotes = quotes.filter(q => q.id !== id);
   save();
   renderQuotes();
-  showToast('🗑️ Eliminada');
+  showToast('🗑️ Deleted');
 }
 
 function copyText(id) {
@@ -114,8 +114,8 @@ function copyText(id) {
         btn.innerHTML = COPY_SVG;
       }, 1800);
     }
-    showToast('📋 Copiado');
-  }).catch(() => showToast('⚠️ No se pudo copiar'));
+    showToast('📋 Copied');
+  }).catch(() => showToast('⚠️ Could not copy'));
 }
 
 /**
@@ -128,14 +128,14 @@ function openModal(editId = null) {
   if (editId) {
     const q = quotes.find(x => x.id === editId);
     if (!q) return;
-    titleEl.innerHTML = 'Editar <span>frase</span>';
-    saveBtn.innerHTML = CHECK_SVG + ' Guardar cambios';
+    titleEl.innerHTML = 'Edit <span>phrase</span>';
+    saveBtn.innerHTML = CHECK_SVG + ' Save changes';
     document.getElementById('edit-id').value = editId;
     document.getElementById('inp-text').value = q.text;
     document.getElementById('inp-category').value = q.category;
   } else {
-    titleEl.innerHTML = 'Nueva <span>frase</span>';
-    saveBtn.innerHTML = '＋ Guardar';
+    titleEl.innerHTML = 'New <span>phrase</span>';
+    saveBtn.innerHTML = '＋ Save';
     document.getElementById('edit-id').value = '';
     document.getElementById('inp-text').value = '';
     document.getElementById('inp-category').value = '';
@@ -178,7 +178,7 @@ function speak(id) {
   utt.lang = 'en-US';
   utt.rate = 0.88;
 
-  // Intentar seleccionar una voz en inglés
+  // Try to select an English voice
   const voices = speechSynthesis.getVoices();
   const en = voices.find(v => v.lang.startsWith('en') && v.localService) || voices.find(v => v.lang.startsWith('en'));
   if (en) utt.voice = en;
@@ -200,41 +200,41 @@ function speak(id) {
 }
 
 /**
- * RENDERIZADO DE LA INTERFAZ
+ * UI RENDERING
  */
 function renderQuotes() {
   const search = document.getElementById('search').value.toLowerCase();
   const cat = document.getElementById('filter-cat').value;
 
-  // Actualizar filtro de categorías
+  // Update category filter
   const cats = [...new Set(quotes.map(q => q.category))].sort();
   const sel = document.getElementById('filter-cat');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">Todas las categorías</option>' +
+  sel.innerHTML = '<option value="">All categories</option>' +
     cats.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
 
-  // Filtrar frases
+  // Filter phrases
   const filtered = quotes.filter(q =>
     (!search || q.text.toLowerCase().includes(search)) &&
     (!cat || q.category === cat)
   );
 
-  // Mostrar contador
-  document.getElementById('counter').textContent = filtered.length ? `${filtered.length} frase${filtered.length !== 1 ? 's' : ''}` : '';
+  // Show counter
+  document.getElementById('counter').textContent = filtered.length ? `${filtered.length} phrase${filtered.length !== 1 ? 's' : ''}` : '';
 
   const grid = document.getElementById('grid');
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty"><span class="emoji">${quotes.length === 0 ? '✨' : '🔎'}</span>
-      <p>${quotes.length === 0 ? 'Tu colección está vacía.<br><small>Toca <strong>＋</strong> para agregar tu primera frase.</small>' : 'Sin resultados para esa búsqueda.'}</p></div>`;
+      <p>${quotes.length === 0 ? 'Your collection is empty.<br><small>Tap <strong>＋</strong> to add your first phrase.</small>' : 'No results for that search.'}</p></div>`;
     return;
   }
 
-  // Renderizar tarjetas
+  // Render cards
   grid.innerHTML = filtered.map(q => `
     <div class="quote-card" id="card-${q.id}">
       <div class="text-row">
         <p class="quote-text">${escHtml(q.text)}</p>
-        <button class="btn-icon" id="copy-${q.id}" title="Copiar frase" onclick="copyText(${q.id})">${COPY_SVG}</button>
+        <button class="btn-icon" id="copy-${q.id}" title="Copy phrase" onclick="copyText(${q.id})">${COPY_SVG}</button>
       </div>
       <div class="meta-row">
         <span class="cat-badge">${escHtml(q.category)}</span>
@@ -243,7 +243,7 @@ function renderQuotes() {
       </div>
       <div class="card-actions">
         <button class="btn-sm btn-listen" id="btn-${q.id}" onclick="speak(${q.id})">
-          ${PLAY_SVG} Escuchar
+          ${PLAY_SVG} Listen
           <div class="wave-wrap" id="wave-${q.id}">
             <div class="wave-bar"></div><div class="wave-bar"></div>
             <div class="wave-bar"></div><div class="wave-bar"></div>
@@ -256,7 +256,7 @@ function renderQuotes() {
             <circle cx="12" cy="12" r="10"/>
             <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/>
           </svg>
-          Ver clips
+          View clips
         </button>      
 
         <button class="btn-sm btn-edit" onclick="openModal(${q.id})">${EDIT_SVG}</button>
@@ -266,7 +266,7 @@ function renderQuotes() {
 }
 
 /**
- * UTILIDADES
+ * UTILS
  */
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -286,6 +286,6 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveQuote();
 });
 
-// Inicialización
+// Initialization
 window.speechSynthesis.onvoiceschanged = () => { };
 renderQuotes();

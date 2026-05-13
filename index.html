@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -24,7 +24,7 @@
   <nav>
     <button class="nav-tab active" id="nav-collection" onclick="showPage('collection')">
       <span class="nav-dot"></span>
-      MIS FRASES
+      MY COLL
     </button>
     <button class="nav-tab" id="nav-yarn" onclick="showPage('yarn')">
       <span class="nav-dot"></span>
@@ -32,29 +32,29 @@
         <polygon points="23 7 16 12 23 17 23 7" />
         <rect x="1" y="5" width="15" height="14" rx="2" />
       </svg>
-      Learning English
+      YARN
     </button>
   </nav>
 
   <!-- PÁGINA 1: MI COLECCIÓN -->
   <div class="page active" id="page-collection">
     <header>
-      <div class="pill-tag">✦ Tu colección personal</div>
+      <div class="pill-tag">✦ Your personal collection</div>
       <h1>Learning English</h1>
     </header>
 
     <div class="col-main">
-      <!-- Herramientas de búsqueda y filtrado -->
+      <!-- Search and filter tools -->
       <div class="toolbar">
         <div class="search-wrap">
-          <input type="text" id="search" placeholder="Buscar frases…" oninput="renderQuotes()" />
+          <input type="text" id="search" placeholder="Search phrases..." oninput="renderQuotes()" />
         </div>
         <select id="filter-cat" onchange="renderQuotes()">
-          <option value="">Todas las categorías</option>
+          <option value="">All categories</option>
         </select>
       </div>
 
-      <!-- Contador y Cuadrícula de Frases -->
+      <!-- Counter and Quotes Grid -->
       <div id="counter" class="counter"></div>
       <div id="grid" class="quotes-grid"></div>
     </div>
@@ -67,24 +67,24 @@
     </div>
   </div>
 
-  <!-- BOTÓN FLOTANTE (AGREGAR FRASE) -->
-  <button id="fab" onclick="openModal()" aria-label="Agregar frase">＋</button>
+  <!-- FAB BUTTON (ADD PHRASE) -->
+  <button id="fab" onclick="openModal()" aria-label="Add phrase">＋</button>
 
-  <!-- MODAL PARA AGREGAR/EDITAR -->
+  <!-- MODAL FOR ADD/EDIT -->
   <div class="modal-overlay" id="modal-overlay" onclick="overlayClick(event)">
     <div class="modal" role="dialog" aria-modal="true">
       <button class="close-btn" onclick="closeModal()">✕</button>
-      <h2 id="modal-title">Nueva <span>frase</span></h2>
+      <h2 id="modal-title">New <span>phrase</span></h2>
       
       <input type="hidden" id="edit-id" value="" />
       
       <div class="field-group">
-        <textarea id="inp-text" placeholder="Escribe o pega tu frase aquí…" maxlength="600"></textarea>
-        <input type="text" id="inp-category" placeholder="Categoría (ej: Formal, Motivación, Casual…)" maxlength="40" />
+        <textarea id="inp-text" placeholder="Type or paste your phrase here..." maxlength="600"></textarea>
+        <input type="text" id="inp-category" placeholder="Category (e.g. Formal, Motivation, Casual...)" maxlength="40" />
         
         <div class="modal-actions">
-          <button class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
-          <button class="btn btn-primary" id="modal-save-btn" onclick="saveQuote()">＋ Guardar</button>
+          <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
+          <button class="btn btn-primary" id="modal-save-btn" onclick="saveQuote()">＋ Save</button>
         </div>
       </div>
     </div>

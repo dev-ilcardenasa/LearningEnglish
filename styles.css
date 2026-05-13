@@ -1,4 +1,4 @@
-/* ── VARIABLES Y ESTILOS GLOBALES ── */
+/* ── GLOBAL VARIABLES AND STYLES ── */
 :root {
   --bg: #0f0f13;
   --surface: #18181f;
@@ -27,7 +27,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Fondo con degradado radial */
+/* Background with radial gradient */
 body::before {
   content: '';
   position: fixed;
@@ -38,7 +38,7 @@ body::before {
               radial-gradient(ellipse 40% 40% at 80% 80%, rgba(93, 224, 197, .08) 0%, transparent 55%);
 }
 
-/* ── NAVEGACIÓN SUPERIOR ── */
+/* ── TOP NAVIGATION ── */
 nav {
   position: sticky;
   top: 0;
@@ -110,7 +110,7 @@ nav {
   background: var(--gold);
 }
 
-/* ── PÁGINAS ── */
+/* ── PAGES ── */
 .page {
   display: none;
   position: relative;
@@ -122,7 +122,7 @@ nav {
   animation: fadeUp .35s ease both;
 }
 
-/* ── PÁGINA 1: MI COLECCIÓN ── */
+/* ── PAGE 1: MY COLLECTION ── */
 #page-collection header {
   padding: 48px 24px 28px;
   text-align: center;
@@ -233,7 +233,7 @@ select {
   gap: 16px;
 }
 
-/* Tarjetas de Frases */
+/* Phrase Cards */
 .quote-card {
   background: var(--card);
   border: 1px solid var(--border);
@@ -423,7 +423,7 @@ select {
   border-color: var(--gold);
 }
 
-/* Animación de ondas de sonido */
+/* Sound wave animation */
 .wave-wrap {
   display: none;
   align-items: center;
@@ -462,7 +462,7 @@ select {
   height: 5px;
 }
 
-/* Botón flotante (FAB) */
+/* Floating Action Button (FAB) */
 #fab {
   position: fixed;
   bottom: 28px;
@@ -491,7 +491,7 @@ select {
   transform: scale(.93);
 }
 
-/* ── PÁGINA 2: LEARNING ENGLISH (GETYARN) ── */
+/* ── PAGE 2: LEARNING ENGLISH (GETYARN) ── */
 .embed-iframe {
   display: block;
   width: 100%;
@@ -504,6 +504,7 @@ select {
   position: fixed;
   inset: 0;
   background: rgba(8, 8, 15, .75);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
@@ -671,7 +672,7 @@ select {
   transform: translateX(-50%) translateY(0);
 }
 
-/* Animaciones */
+/* Animations */
 @keyframes fadeUp {
   from {
     opacity: 0;
