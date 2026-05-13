@@ -1,0 +1,17 @@
+{
+  "name": "Learning English",
+  "short_name": "EngLearn",
+  "description": "Tu colección personal de frases en inglés",
+  "start_url": "frases-favoritas.html",
+  "display": "standalone",
+  "background_color": "#0f0f13",
+  "theme_color": "#7c6af7",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/197/197374.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
