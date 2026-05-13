@@ -2,7 +2,7 @@
   "name": "Learning English",
   "short_name": "EngLearn",
   "description": "Tu colección personal de frases en inglés",
-  "start_url": "frases-favoritas.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#0f0f13",
   "theme_color": "#7c6af7",
