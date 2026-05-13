@@ -42,17 +42,14 @@ function openClip(id) {
   const q = quotes.find(x => x.id === id);
   if (!q) return;
 
-  // Copiar frase al portapapeles
-  navigator.clipboard.writeText(q.text).catch(() => { });
-
   // Cambiar a la pestaña de Learning English
   showPage('yarn');
 
-  // Cargar búsqueda en el iframe
-  const url = 'https://getyarn.io/?term=' + encodeURIComponent(q.text);
+  // Cargar búsqueda en el iframe con la frase directamente
+  const url = 'https://getyarn.io/yarn-find?text=' + encodeURIComponent(q.text);
   document.getElementById('embed-iframe').src = url;
 
-  showToast('📋 Frase copiada — abriendo clips...');
+  showToast('� Buscando clips...');
 }
 
 /**
