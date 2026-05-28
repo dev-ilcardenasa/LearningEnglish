@@ -375,10 +375,16 @@ document.addEventListener('keydown', e => {
 // Initialization
 window.speechSynthesis.onvoiceschanged = () => { };
 
-// Load saved filter
+// Load saved filter and populate categories before rendering
 const savedFilter = localStorage.getItem(FILTER_KEY);
 if (savedFilter) {
-  document.getElementById('filter-cat').value = savedFilter;
+  const cats = [...new Set(quotes.map(q => q.category))].sort();
+  const filterEl = document.getElementById('filter-cat');
+  if (cats.includes(savedFilter)) {
+    filterEl.innerHTML = '<option value="">All categories</option>' +
+      cats.map(c => `<option value="${c}"${c === savedFilter ? ' selected' : ''}>${c}</option>`).join('');
+    filterEl.value = savedFilter;
+  }
 }
 
 renderQuotes();
