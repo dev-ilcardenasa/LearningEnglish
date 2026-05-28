@@ -47,7 +47,8 @@
       <!-- Search and filter tools -->
       <div class="toolbar">
         <div class="search-wrap">
-          <input type="text" id="search" placeholder="Search phrases..." oninput="renderQuotes()" />
+          <input type="text" id="search" placeholder="Search phrases..." oninput="onSearchInput()" />
+          <button id="clear-search" class="clear-btn" onclick="clearSearch()" aria-label="Clear search">✕</button>
         </div>
         <select id="filter-cat" onchange="renderQuotes()">
           <option value="">All categories</option>

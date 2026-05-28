@@ -282,6 +282,27 @@ function speak(id) {
 /**
  * UI RENDERING
  */
+function onSearchInput() {
+  const searchInput = document.getElementById('search');
+  const clearBtn = document.getElementById('clear-search');
+  
+  if (searchInput.value.length > 0) {
+    clearBtn.classList.add('show');
+  } else {
+    clearBtn.classList.remove('show');
+  }
+  
+  renderQuotes();
+}
+
+function clearSearch() {
+  const searchInput = document.getElementById('search');
+  searchInput.value = '';
+  document.getElementById('clear-search').classList.remove('show');
+  searchInput.focus();
+  renderQuotes();
+}
+
 function renderQuotes() {
   const search = document.getElementById('search').value.toLowerCase();
   const filterEl = document.getElementById('filter-cat');

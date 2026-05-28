@@ -170,10 +170,40 @@ nav {
 .search-wrap {
   flex: 1;
   min-width: 180px;
+  position: relative;
 }
 
 .search-wrap input {
   width: 100%;
+  padding-right: 40px; /* Space for the clear button */
+}
+
+.clear-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--border);
+  border: none;
+  color: var(--muted);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  cursor: pointer;
+  display: none; /* Hidden by default */
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.clear-btn:hover {
+  background: var(--muted);
+  color: var(--txt);
+}
+
+.clear-btn.show {
+  display: flex;
 }
 
 input[type="text"],
