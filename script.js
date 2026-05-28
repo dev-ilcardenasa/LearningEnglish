@@ -2,8 +2,37 @@
  * CONFIGURACIÓN Y VARIABLES GLOBALES
  */
 const KEY = 'mf_quotes_v2';
+const FILTER_KEY = 'mf_quotes_filter';
 let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
 let speaking = null;
+
+// Category colors configuration
+const CAT_COLORS = [
+  { name: 'blue', color: '#4da3ff' },
+  { name: 'green', color: '#5de0c5' },
+  { name: 'purple', color: '#a37cf7' },
+  { name: 'orange', color: '#ff9f43' },
+  { name: 'pink', color: '#ff78b9' },
+  { name: 'red', color: '#e05d5d' },
+  { name: 'teal', color: '#26c6da' },
+  { name: 'yellow', color: '#ffca28' },
+  { name: 'indigo', color: '#6610f2' }
+];
+
+function getCategoryStyles(category) {
+  if (!category || category === 'General') {
+    return '';
+  }
+  // Generate a stable hash-based index for the color
+  let hash = 0;
+  for (let i = 0; i < category.length; i++) {
+    hash = category.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % CAT_COLORS.length;
+  const color = CAT_COLORS[index].color;
+  
+  return `style="--cat-color: ${color}; --cat-bg: ${color}1f; --cat-border: ${color}40"`;
+}
 
 // Guardar en LocalStorage
 function save() {
@@ -121,9 +150,40 @@ function copyText(id) {
 /**
  * MODAL
  */
+function renderCategoryChips(selectedCategory = '') {
+  const container = document.getElementById('modal-category-chips');
+  const cats = [...new Set(quotes.map(q => q.category))].sort();
+  
+  if (cats.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = cats.map(c => {
+    const styles = getCategoryStyles(c);
+    const active = c === selectedCategory ? 'active' : '';
+    return `<div class="chip ${active} ${styles ? 'colored' : ''}" ${styles} onclick="selectChip('${c}')">${escHtml(c)}</div>`;
+  }).join('');
+}
+
+function selectChip(cat) {
+  const input = document.getElementById('inp-category');
+  input.value = cat;
+  
+  // Update active state of chips
+  document.querySelectorAll('.chip').forEach(chip => {
+    if (chip.textContent === cat) {
+      chip.classList.add('active');
+    } else {
+      chip.classList.remove('active');
+    }
+  });
+}
+
 function openModal(editId = null) {
   const titleEl = document.getElementById('modal-title');
   const saveBtn = document.getElementById('modal-save-btn');
+  let currentCat = '';
 
   if (editId) {
     const q = quotes.find(x => x.id === editId);
@@ -133,15 +193,35 @@ function openModal(editId = null) {
     document.getElementById('edit-id').value = editId;
     document.getElementById('inp-text').value = q.text;
     document.getElementById('inp-category').value = q.category;
+    currentCat = q.category;
   } else {
     titleEl.innerHTML = 'New <span>phrase</span>';
     saveBtn.innerHTML = '＋ Save';
     document.getElementById('edit-id').value = '';
     document.getElementById('inp-text').value = '';
-    document.getElementById('inp-category').value = '';
+    
+    // Default to the current filter if one is selected, otherwise empty
+    const activeFilter = document.getElementById('filter-cat').value;
+    document.getElementById('inp-category').value = activeFilter;
+    currentCat = activeFilter;
   }
 
+  renderCategoryChips(currentCat);
   document.getElementById('modal-overlay').classList.add('open');
+  
+  // Update chips active state as user types a new category
+  const catInput = document.getElementById('inp-category');
+  catInput.oninput = () => {
+    const val = catInput.value.trim();
+    document.querySelectorAll('.chip').forEach(chip => {
+      if (chip.textContent.toLowerCase() === val.toLowerCase()) {
+        chip.classList.add('active');
+      } else {
+        chip.classList.remove('active');
+      }
+    });
+  };
+
   setTimeout(() => document.getElementById('inp-text').focus(), 60);
 }
 
@@ -204,13 +284,16 @@ function speak(id) {
  */
 function renderQuotes() {
   const search = document.getElementById('search').value.toLowerCase();
-  const cat = document.getElementById('filter-cat').value;
+  const filterEl = document.getElementById('filter-cat');
+  const cat = filterEl.value;
 
-  // Update category filter
+  // Save current filter to localStorage
+  localStorage.setItem(FILTER_KEY, cat);
+
+  // Update category filter dropdown
   const cats = [...new Set(quotes.map(q => q.category))].sort();
-  const sel = document.getElementById('filter-cat');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="">All categories</option>' +
+  const cur = filterEl.value;
+  filterEl.innerHTML = '<option value="">All categories</option>' +
     cats.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
 
   // Filter phrases
@@ -230,14 +313,16 @@ function renderQuotes() {
   }
 
   // Render cards
-  grid.innerHTML = filtered.map(q => `
+  grid.innerHTML = filtered.map(q => {
+    const catStyles = getCategoryStyles(q.category);
+    return `
     <div class="quote-card" id="card-${q.id}">
       <div class="text-row">
         <p class="quote-text">${escHtml(q.text)}</p>
         <button class="btn-icon" id="copy-${q.id}" title="Copy phrase" onclick="copyText(${q.id})">${COPY_SVG}</button>
       </div>
       <div class="meta-row">
-        <span class="cat-badge">${escHtml(q.category)}</span>
+        <span class="cat-badge ${catStyles ? 'colored' : ''}" ${catStyles}>${escHtml(q.category)}</span>
         <span class="lang-badge">🇺🇸 EN</span>
         <span class="date-txt">${q.date}</span>
       </div>
@@ -262,7 +347,8 @@ function renderQuotes() {
         <button class="btn-sm btn-edit" onclick="openModal(${q.id})">${EDIT_SVG}</button>
         <button class="btn-sm btn-delete" onclick="deleteQuote(${q.id})">${DEL_SVG}</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 /**
@@ -288,4 +374,11 @@ document.addEventListener('keydown', e => {
 
 // Initialization
 window.speechSynthesis.onvoiceschanged = () => { };
+
+// Load saved filter
+const savedFilter = localStorage.getItem(FILTER_KEY);
+if (savedFilter) {
+  document.getElementById('filter-cat').value = savedFilter;
+}
+
 renderQuotes();

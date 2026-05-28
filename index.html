@@ -80,7 +80,12 @@
       
       <div class="field-group">
         <textarea id="inp-text" placeholder="Type or paste your phrase here..." maxlength="600"></textarea>
-        <input type="text" id="inp-category" placeholder="Category (e.g. Formal, Motivation, Casual...)" maxlength="40" />
+        
+        <div class="category-selector-wrap">
+          <label>Category</label>
+          <div id="modal-category-chips" class="category-chips"></div>
+          <input type="text" id="inp-category" placeholder="New category..." maxlength="40" />
+        </div>
         
         <div class="modal-actions">
           <button class="btn btn-cancel" onclick="closeModal()">Cancel</button>
