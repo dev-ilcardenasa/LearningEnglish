@@ -312,6 +312,7 @@ select {
   color: #d8d8f0;
   flex: 1;
   font-weight: 400;
+  white-space: pre-wrap;
 }
 
 .btn-icon {

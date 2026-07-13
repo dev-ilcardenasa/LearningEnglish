@@ -85,11 +85,12 @@ function openClip(id) {
  * PHRASE MANAGEMENT (CRUD)
  */
 function saveQuote() {
-  const text = document.getElementById('inp-text').value.trim();
+  const rawText = document.getElementById('inp-text').value;
+  const trimmedText = rawText.trim();
   const category = document.getElementById('inp-category').value.trim() || 'General';
   const editId = document.getElementById('edit-id').value;
 
-  if (!text) {
+  if (!trimmedText) {
     showToast('⚠️ Type a phrase first');
     return;
   }
@@ -98,7 +99,7 @@ function saveQuote() {
     // Edit existing phrase
     const idx = quotes.findIndex(q => q.id === Number(editId));
     if (idx !== -1) {
-      quotes[idx].text = text;
+      quotes[idx].text = rawText;
       quotes[idx].category = category;
     }
     save();
@@ -109,7 +110,7 @@ function saveQuote() {
     // Save new phrase
     quotes.unshift({
       id: Date.now(),
-      text,
+      text: rawText,
       category,
       date: new Date().toLocaleDateString('en-US')
     });
@@ -339,7 +340,7 @@ function renderQuotes() {
     return `
     <div class="quote-card" id="card-${q.id}">
       <div class="text-row">
-        <p class="quote-text">${escHtml(q.text)}</p>
+        <p class="quote-text">${escHtml(q.text).replace(/\n/g, '<br>')}</p>
         <button class="btn-icon" id="copy-${q.id}" title="Copy phrase" onclick="copyText(${q.id})">${COPY_SVG}</button>
       </div>
       <div class="meta-row">
