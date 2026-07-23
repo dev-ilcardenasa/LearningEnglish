@@ -23,11 +23,20 @@
   <!-- NAVEGACIÓN SUPERIOR -->
   <nav>
     <button class="nav-tab active" id="nav-collection" onclick="showPage('collection')">
-      <span class="nav-dot"></span>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0">
+        <path d="M19 11H5m14 0a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2m14 0V9a2 2 0 0 0-2-2M5 11V9a2 2 0 0 1 2-2m0 0V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2M7 7h10"/>
+      </svg>
       MY COLL
     </button>
+    <button class="nav-tab" id="nav-categories" onclick="showPage('categories')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+      CATEGORIES
+    </button>
     <button class="nav-tab" id="nav-yarn" onclick="showPage('yarn')">
-      <span class="nav-dot"></span>
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="flex-shrink:0">
         <polygon points="23 7 16 12 23 17 23 7" />
         <rect x="1" y="5" width="15" height="14" rx="2" />
@@ -61,10 +70,45 @@
     </div>
   </div>
 
-  <!-- PÁGINA 2: LEARNING ENGLISH (GETYARN IFRAME) -->
+  <!-- PÁGINA 2: GESTOR DE CATEGORÍAS -->
+  <div class="page" id="page-categories">
+    <header>
+      <div class="pill-tag">✦ Organize your collection</div>
+      <h1>Categories</h1>
+    </header>
+    
+    <div class="col-main">
+      <div class="toolbar" style="margin-bottom: 20px;">
+        <input type="text" id="new-category-input" placeholder="Add a new category..." style="flex: 1;" onkeydown="if(event.key === 'Enter') addCategory()" />
+        <button class="btn btn-primary" style="justify-content: center;" onclick="addCategory()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add
+        </button>
+      </div>
+      
+      <div id="categories-grid" class="categories-grid"></div>
+    </div>
+  </div>
+
+  <!-- PÁGINA 3: LEARNING ENGLISH (GETYARN) -->
   <div class="page" id="page-yarn">
-    <div class="yarn-main">
-      <iframe id="embed-iframe" class="embed-iframe" src="https://getyarn.io" allow="autoplay; encrypted-media" allowfullscreen=""></iframe>
+    <div class="yarn-main" style="padding: 60px 20px; text-align: center; color: var(--muted); max-width: 600px; margin: 0 auto;">
+      <h2 style="color: var(--txt); font-family: 'Syne', sans-serif; font-size: 2rem; margin-bottom: 15px;">Yarn Search</h2>
+      <p style="margin-bottom: 30px; line-height: 1.6; font-size: 0.95rem;">
+        Search for movie clips using Yarn. You can either click "View clips" from your phrases or search manually below.
+      </p>
+      
+      <div style="background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px;">
+        <h3 style="font-size: 1.1rem; color: var(--txt); margin-bottom: 15px;">Manual Search</h3>
+        <input type="text" id="yarn-manual-search" placeholder="Type a phrase to search on Yarn..." style="width: 100%; margin-bottom: 15px;" onkeydown="if(event.key === 'Enter') searchYarnManual()" />
+        <button class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="searchYarnManual()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          Search on Yarn
+        </button>
+      </div>
     </div>
   </div>
 
@@ -78,6 +122,7 @@
       <h2 id="modal-title">New <span>phrase</span></h2>
       
       <input type="hidden" id="edit-id" value="" />
+      <input type="hidden" id="inp-category" value="General" />
       
       <div class="field-group">
         <textarea id="inp-text" placeholder="Type or paste your phrase here..." maxlength="10000"></textarea>
@@ -85,7 +130,6 @@
         <div class="category-selector-wrap">
           <label>Category</label>
           <div id="modal-category-chips" class="category-chips"></div>
-          <input type="text" id="inp-category" placeholder="New category..." maxlength="40" />
         </div>
         
         <div class="modal-actions">

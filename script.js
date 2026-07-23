@@ -2,8 +2,10 @@
  * CONFIGURACIÓN Y VARIABLES GLOBALES
  */
 const KEY = 'mf_quotes_v2';
+const CATEGORIES_KEY = 'mf_categories_v2';
 const FILTER_KEY = 'mf_quotes_filter';
 let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
+let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '["General", "Verbs", "Phrasal Verbs", "Idioms", "Slang"]');
 let speaking = null;
 
 // Category colors configuration
@@ -39,6 +41,231 @@ function save() {
   localStorage.setItem(KEY, JSON.stringify(quotes));
 }
 
+function saveCategories() {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
+}
+
+// ─── CATEGORIES MANAGEMENT ───
+function renderCategories() {
+  const grid = document.getElementById('categories-grid');
+  if (!categories.length) {
+    grid.innerHTML = `<div class="empty"><span class="emoji">📁</span>
+      <p>No categories yet. Add your first one above!</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = categories.map((cat, index) => {
+    const catStyles = getCategoryStyles(cat);
+    const count = quotes.filter(q => q.category === cat).length;
+    return `
+      <div class="category-card" draggable="true" data-index="${index}">
+        <div class="name-row">
+          <div class="drag-handle" title="Drag to reorder">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+              <circle cx="9" cy="6" r="1"></circle>
+              <circle cx="15" cy="6" r="1"></circle>
+              <circle cx="9" cy="12" r="1"></circle>
+              <circle cx="15" cy="12" r="1"></circle>
+              <circle cx="9" cy="18" r="1"></circle>
+              <circle cx="15" cy="18" r="1"></circle>
+            </svg>
+          </div>
+          <span class="cat-badge ${catStyles ? 'colored' : ''}" ${catStyles} id="cat-display-${index}">${escHtml(cat)}</span>
+          <span style="color: var(--muted); font-size: 0.85rem; font-weight: 500;">${count} phrase${count !== 1 ? 's' : ''}</span>
+          <input type="text" id="cat-edit-${index}" value="${escHtml(cat)}" style="display: none;" onkeydown="if(event.key === 'Enter') saveCategoryEdit(${index}); if(event.key === 'Escape') cancelCategoryEdit(${index});" />
+          <button class="btn-icon" onclick="toggleCategoryEdit(${index})" title="Edit">
+            ${EDIT_SVG}
+          </button>
+        </div>
+        <div class="actions">
+          <button class="btn-view-phrases" onclick="viewPhrasesInCategory('${escHtml(cat)}')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            View Phrases
+          </button>
+          <button class="btn-sm btn-delete" onclick="deleteCategory(${index})">${DEL_SVG} Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Add drag and drop listeners
+  const cards = grid.querySelectorAll('.category-card');
+  cards.forEach(card => {
+    card.addEventListener('dragstart', handleDragStart);
+    card.addEventListener('dragover', handleDragOver);
+    card.addEventListener('drop', handleDrop);
+    card.addEventListener('dragend', handleDragEnd);
+  });
+}
+
+function addCategory() {
+  const input = document.getElementById('new-category-input');
+  const value = input.value.trim();
+  if (!value) {
+    showToast('⚠️ Enter a category name');
+    return;
+  }
+
+  // Check for duplicates case-insensitively
+  const normalizedValue = value.toLowerCase();
+  const exists = categories.some(cat => cat.toLowerCase() === normalizedValue);
+  if (exists) {
+    showToast('⚠️ That category already exists');
+    return;
+  }
+
+  categories.push(value);
+  saveCategories();
+  input.value = '';
+  renderCategories();
+  showToast(`✅ Category "${value}" added`);
+}
+
+function toggleCategoryEdit(index) {
+  const display = document.getElementById(`cat-display-${index}`);
+  const editInput = document.getElementById(`cat-edit-${index}`);
+
+  if (display.style.display === 'none') {
+    // Already in edit mode, cancel
+    cancelCategoryEdit(index);
+  } else {
+    // Switch to edit mode
+    display.style.display = 'none';
+    editInput.style.display = 'block';
+    editInput.focus();
+    editInput.select();
+  }
+}
+
+function saveCategoryEdit(index) {
+  const editInput = document.getElementById(`cat-edit-${index}`);
+  const newValue = editInput.value.trim();
+  const oldValue = categories[index];
+
+  if (!newValue) {
+    showToast('⚠️ Category name cannot be empty');
+    editInput.value = oldValue;
+    cancelCategoryEdit(index);
+    return;
+  }
+
+  if (newValue !== oldValue) {
+    // Check for duplicates case-insensitively
+    const normalizedNew = newValue.toLowerCase();
+    const exists = categories.some((cat, i) => i !== index && cat.toLowerCase() === normalizedNew);
+    if (exists) {
+      showToast('⚠️ That category already exists');
+      editInput.value = oldValue;
+      cancelCategoryEdit(index);
+      return;
+    }
+  }
+
+  // Update both categories and quotes that used the old name
+  categories[index] = newValue;
+  quotes = quotes.map(q => {
+    if (q.category === oldValue) {
+      q.category = newValue;
+    }
+    return q;
+  });
+
+  saveCategories();
+  save();
+  cancelCategoryEdit(index);
+  renderCategories();
+  renderQuotes();
+  showToast('✅ Category updated');
+}
+
+function cancelCategoryEdit(index) {
+  const display = document.getElementById(`cat-display-${index}`);
+  const editInput = document.getElementById(`cat-edit-${index}`);
+  display.style.display = 'block';
+  editInput.style.display = 'none';
+  editInput.value = categories[index];
+}
+
+function deleteCategory(index) {
+  const catName = categories[index];
+  const quotesInCategory = quotes.filter(q => q.category === catName).length;
+
+  let message = `Are you sure you want to delete "${catName}"?`;
+  if (quotesInCategory > 0) {
+    message += ` ${quotesInCategory} quote(s) will be moved to "General".`;
+  }
+
+  if (!confirm(message)) return;
+
+  // Move quotes to General
+  quotes = quotes.map(q => {
+    if (q.category === catName) {
+      q.category = 'General';
+    }
+    return q;
+  });
+  save();
+
+  // Remove category
+  categories.splice(index, 1);
+  // Ensure "General" is always present
+  if (!categories.includes('General')) {
+    categories.unshift('General');
+  }
+
+  saveCategories();
+  renderCategories();
+  renderQuotes();
+  showToast(`✅ Category "${catName}" deleted`);
+}
+
+function viewPhrasesInCategory(category) {
+  // Set the filter
+  document.getElementById('filter-cat').value = category;
+  localStorage.setItem(FILTER_KEY, category);
+  
+  // Clear the search bar
+  document.getElementById('search').value = '';
+  document.getElementById('clear-search').classList.remove('show');
+
+  // Go to the collection page and refresh the quotes
+  showPage('collection');
+  renderQuotes();
+}
+
+// Drag and drop variables
+let draggedIndex = null;
+
+function handleDragStart(e) {
+  draggedIndex = Number(e.target.dataset.index);
+  e.target.classList.add('dragging');
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  const targetIndex = Number(e.target.closest('.category-card').dataset.index);
+  if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+  // Reorder array
+  const [removed] = categories.splice(draggedIndex, 1);
+  categories.splice(targetIndex, 0, removed);
+
+  saveCategories();
+  renderCategories();
+  renderQuotes();
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging');
+  draggedIndex = null;
+}
+
 // Iconos SVG
 const COPY_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
 const CHECK_SVG = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>`;
@@ -61,6 +288,11 @@ function showPage(page) {
   // Show/hide floating action button (FAB) depending on the page
   document.getElementById('fab').style.display = page === 'collection' ? 'flex' : 'none';
 
+  // Render categories page if needed
+  if (page === 'categories') {
+    renderCategories();
+  }
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -71,14 +303,22 @@ function openClip(id) {
   const q = quotes.find(x => x.id === id);
   if (!q) return;
 
-  // Switch to the Learning English tab
-  showPage('yarn');
-
-  // Load search in the iframe with the phrase directly
+  // Open Yarn search in a new tab (works on mobile and desktop)
   const url = 'https://getyarn.io/yarn-find?text=' + encodeURIComponent(q.text);
-  document.getElementById('embed-iframe').src = url;
+  window.open(url, '_blank');
 
-  showToast('🔍 Searching clips...');
+  showToast('🔍 Opening Yarn in a new tab...');
+}
+
+function searchYarnManual() {
+  const val = document.getElementById('yarn-manual-search').value.trim();
+  if (!val) {
+    showToast('⚠️ Type something to search');
+    return;
+  }
+  const url = 'https://getyarn.io/yarn-find?text=' + encodeURIComponent(val);
+  window.open(url, '_blank');
+  showToast('🔍 Opening Yarn in a new tab...');
 }
 
 /**
@@ -87,7 +327,7 @@ function openClip(id) {
 function saveQuote() {
   const rawText = document.getElementById('inp-text').value;
   const trimmedText = rawText.trim();
-  const category = document.getElementById('inp-category').value.trim() || 'General';
+  const category = document.getElementById('inp-category').value || 'General';
   const editId = document.getElementById('edit-id').value;
 
   if (!trimmedText) {
@@ -153,14 +393,8 @@ function copyText(id) {
  */
 function renderCategoryChips(selectedCategory = '') {
   const container = document.getElementById('modal-category-chips');
-  const cats = [...new Set(quotes.map(q => q.category))].sort();
   
-  if (cats.length === 0) {
-    container.innerHTML = '';
-    return;
-  }
-
-  container.innerHTML = cats.map(c => {
+  container.innerHTML = categories.map(c => {
     const styles = getCategoryStyles(c);
     const active = c === selectedCategory ? 'active' : '';
     return `<div class="chip ${active} ${styles ? 'colored' : ''}" ${styles} onclick="selectChip('${c}')">${escHtml(c)}</div>`;
@@ -193,7 +427,6 @@ function openModal(editId = null) {
     saveBtn.innerHTML = CHECK_SVG + ' Save changes';
     document.getElementById('edit-id').value = editId;
     document.getElementById('inp-text').value = q.text;
-    document.getElementById('inp-category').value = q.category;
     currentCat = q.category;
   } else {
     titleEl.innerHTML = 'New <span>phrase</span>';
@@ -201,27 +434,14 @@ function openModal(editId = null) {
     document.getElementById('edit-id').value = '';
     document.getElementById('inp-text').value = '';
     
-    // Default to the current filter if one is selected, otherwise empty
+    // Default to the current filter if one is selected, otherwise first category or General
     const activeFilter = document.getElementById('filter-cat').value;
-    document.getElementById('inp-category').value = activeFilter;
-    currentCat = activeFilter;
+    currentCat = activeFilter || categories[0] || 'General';
   }
 
+  document.getElementById('inp-category').value = currentCat;
   renderCategoryChips(currentCat);
   document.getElementById('modal-overlay').classList.add('open');
-  
-  // Update chips active state as user types a new category
-  const catInput = document.getElementById('inp-category');
-  catInput.oninput = () => {
-    const val = catInput.value.trim();
-    document.querySelectorAll('.chip').forEach(chip => {
-      if (chip.textContent.toLowerCase() === val.toLowerCase()) {
-        chip.classList.add('active');
-      } else {
-        chip.classList.remove('active');
-      }
-    });
-  };
 
   setTimeout(() => document.getElementById('inp-text').focus(), 60);
 }
@@ -312,11 +532,10 @@ function renderQuotes() {
   // Save current filter to localStorage
   localStorage.setItem(FILTER_KEY, cat);
 
-  // Update category filter dropdown
-  const cats = [...new Set(quotes.map(q => q.category))].sort();
+  // Update category filter dropdown using the categories array (preserves user order)
   const cur = filterEl.value;
   filterEl.innerHTML = '<option value="">All categories</option>' +
-    cats.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
+    categories.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
 
   // Filter phrases
   const filtered = quotes.filter(q =>
@@ -329,8 +548,17 @@ function renderQuotes() {
 
   const grid = document.getElementById('grid');
   if (!filtered.length) {
-    grid.innerHTML = `<div class="empty"><span class="emoji">${quotes.length === 0 ? '✨' : '🔎'}</span>
-      <p>${quotes.length === 0 ? 'Your collection is empty.<br><small>Tap <strong>＋</strong> to add your first phrase.</small>' : 'No results for that search.'}</p></div>`;
+    let emoji = '🔎';
+    let message = 'No results for that search.';
+    if (quotes.length === 0) {
+      emoji = '✨';
+      message = 'Your collection is empty.<br><small>Tap <strong>＋</strong> to add your first phrase.</small>';
+    } else if (cat) {
+      // If a category is selected but there are no results, it means the category is empty
+      emoji = '📂';
+      message = `This category has no phrases yet.<br><small>Tap <strong>＋</strong> to add a phrase to "${cat}".</small>`;
+    }
+    grid.innerHTML = `<div class="empty"><span class="emoji">${emoji}</span><p>${message}</p></div>`;
     return;
   }
 
@@ -397,14 +625,74 @@ document.addEventListener('keydown', e => {
 // Initialization
 window.speechSynthesis.onvoiceschanged = () => { };
 
+// Initialize categories: deduplicate case-insensitively, merge quotes, ensure General is first
+const normalizedCategoriesMap = new Map(); // key: lowercase category name, value: original category name
+
+// Step 1: Process existing categories, deduplicating case-insensitively and keeping the first occurrence
+categories.forEach(cat => {
+  const normalized = cat.toLowerCase();
+  if (!normalizedCategoriesMap.has(normalized)) {
+    normalizedCategoriesMap.set(normalized, cat);
+  }
+});
+
+// Step 2: Process quotes to make sure all their categories are present, deduplicating case-insensitively
+const uniqueQuoteCategories = [...new Set(quotes.map(q => q.category))];
+uniqueQuoteCategories.forEach(cat => {
+  const normalized = cat.toLowerCase();
+  if (!normalizedCategoriesMap.has(normalized)) {
+    normalizedCategoriesMap.set(normalized, cat);
+  } else {
+    // If quote has a case-variant of an existing category, update the quote to use the existing category name
+    const existingCat = normalizedCategoriesMap.get(normalized);
+    if (existingCat !== cat) {
+      quotes = quotes.map(q => {
+        if (q.category === cat) {
+          q.category = existingCat;
+        }
+        return q;
+      });
+    }
+  }
+});
+
+// Step 3: Create the final categories array from the map's values
+categories = Array.from(normalizedCategoriesMap.values());
+
+// Step 4: Ensure "General" is present and is the first item
+const normalizedGeneral = 'general'.toLowerCase();
+if (!normalizedCategoriesMap.has(normalizedGeneral)) {
+  categories.unshift('General');
+} else {
+  // If General is present (in any case), move it to first position and ensure it's capitalized as "General"
+  const generalEntry = normalizedCategoriesMap.get(normalizedGeneral);
+  if (generalEntry !== 'General') {
+    // Rename all quotes using the old case to "General"
+    quotes = quotes.map(q => {
+      if (q.category === generalEntry) {
+        q.category = 'General';
+      }
+      return q;
+    });
+  }
+  // Remove the existing general entry and add "General" as first item
+  const generalIndex = categories.findIndex(c => c.toLowerCase() === normalizedGeneral);
+  if (generalIndex !== -1) {
+    categories.splice(generalIndex, 1);
+  }
+  categories.unshift('General');
+}
+
+saveCategories();
+save();
+
 // Load saved filter and populate categories before rendering
 const savedFilter = localStorage.getItem(FILTER_KEY);
 if (savedFilter) {
-  const cats = [...new Set(quotes.map(q => q.category))].sort();
   const filterEl = document.getElementById('filter-cat');
-  if (cats.includes(savedFilter)) {
+  if (categories.includes(savedFilter)) {
     filterEl.innerHTML = '<option value="">All categories</option>' +
-      cats.map(c => `<option value="${c}"${c === savedFilter ? ' selected' : ''}>${c}</option>`).join('');
+      categories.map(c => `<option value="${c}"${c === savedFilter ? ' selected' : ''}>${c}</option>`).join('');
     filterEl.value = savedFilter;
   }
 }
