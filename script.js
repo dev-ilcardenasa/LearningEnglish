@@ -71,7 +71,7 @@ function renderCategories() {
             </svg>
           </div>
           <span class="cat-badge ${catStyles ? 'colored' : ''}" ${catStyles} id="cat-display-${index}">${escHtml(cat)}</span>
-          <span style="color: var(--muted); font-size: 0.85rem; font-weight: 500;">${count} phrase${count !== 1 ? 's' : ''}</span>
+          <span class="phrase-count">${count} phrase${count !== 1 ? 's' : ''}</span>
           <input type="text" id="cat-edit-${index}" value="${escHtml(cat)}" style="display: none;" onkeydown="if(event.key === 'Enter') saveCategoryEdit(${index}); if(event.key === 'Escape') cancelCategoryEdit(${index});" />
           <button class="btn-icon" onclick="toggleCategoryEdit(${index})" title="Edit">
             ${EDIT_SVG}
@@ -84,6 +84,7 @@ function renderCategories() {
             </svg>
             View Phrases
           </button>
+          <div style="flex-grow:1;"></div>
           <button class="btn-sm btn-delete" onclick="deleteCategory(${index})">${DEL_SVG} Delete</button>
         </div>
       </div>

@@ -850,6 +850,15 @@ select {
   text-align: center;
   padding: 8px 12px;
   font-size: 0.82rem;
+  max-width: 60%;
+}
+
+.phrase-count {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .category-card input[type="text"] {
@@ -866,6 +875,7 @@ select {
   gap: 8px;
   justify-content: flex-start;
   flex-wrap: wrap;
+  padding-left: 38px; /* 28px drag handle + 10px gap from name row */
 }
 
 .drag-handle {
