@@ -5,7 +5,7 @@ const KEY = 'mf_quotes_v2';
 const CATEGORIES_KEY = 'mf_categories_v2';
 const FILTER_KEY = 'mf_quotes_filter';
 let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
-let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '["General", "Verbs", "Phrasal Verbs", "Idioms", "Slang"]');
+let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '["General"]');
 let speaking = null;
 
 // Category colors configuration
@@ -658,6 +658,13 @@ uniqueQuoteCategories.forEach(cat => {
 
 // Step 3: Create the final categories array from the map's values
 categories = Array.from(normalizedCategoriesMap.values());
+
+// Step 3.5: Remove any categories that have zero phrases (except General)
+categories = categories.filter(cat => {
+  if (cat.toLowerCase() === 'general') return true;
+  const count = quotes.filter(q => q.category === cat).length;
+  return count > 0;
+});
 
 // Step 4: Ensure "General" is present and is the first item
 const normalizedGeneral = 'general'.toLowerCase();
