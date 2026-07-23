@@ -60,18 +60,20 @@ function renderCategories() {
     return `
       <div class="category-card" draggable="true" data-index="${index}">
         <div class="name-row">
-          <div class="drag-handle" title="Drag to reorder">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-              <circle cx="9" cy="6" r="1"></circle>
-              <circle cx="15" cy="6" r="1"></circle>
-              <circle cx="9" cy="12" r="1"></circle>
-              <circle cx="15" cy="12" r="1"></circle>
-              <circle cx="9" cy="18" r="1"></circle>
-              <circle cx="15" cy="18" r="1"></circle>
-            </svg>
+          <div class="name-row-left">
+            <div class="drag-handle" title="Drag to reorder">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <circle cx="9" cy="6" r="1"></circle>
+                <circle cx="15" cy="6" r="1"></circle>
+                <circle cx="9" cy="12" r="1"></circle>
+                <circle cx="15" cy="12" r="1"></circle>
+                <circle cx="9" cy="18" r="1"></circle>
+                <circle cx="15" cy="18" r="1"></circle>
+              </svg>
+            </div>
+            <span class="cat-badge ${catStyles ? 'colored' : ''}" ${catStyles} id="cat-display-${index}">${escHtml(cat)}</span>
+            <span class="phrase-count">${count} phrase${count !== 1 ? 's' : ''}</span>
           </div>
-          <span class="cat-badge ${catStyles ? 'colored' : ''}" ${catStyles} id="cat-display-${index}">${escHtml(cat)}</span>
-          <span class="phrase-count">${count} phrase${count !== 1 ? 's' : ''}</span>
           <input type="text" id="cat-edit-${index}" value="${escHtml(cat)}" style="display: none;" onkeydown="if(event.key === 'Enter') saveCategoryEdit(${index}); if(event.key === 'Escape') cancelCategoryEdit(${index});" />
           <button class="btn-icon" onclick="toggleCategoryEdit(${index})" title="Edit">
             ${EDIT_SVG}
@@ -127,13 +129,15 @@ function addCategory() {
 function toggleCategoryEdit(index) {
   const display = document.getElementById(`cat-display-${index}`);
   const editInput = document.getElementById(`cat-edit-${index}`);
+  const card = document.querySelector(`.category-card[data-index="${index}"]`);
+  const nameRowLeft = card.querySelector('.name-row-left');
 
-  if (display.style.display === 'none') {
+  if (nameRowLeft.style.display === 'none') {
     // Already in edit mode, cancel
     cancelCategoryEdit(index);
   } else {
     // Switch to edit mode
-    display.style.display = 'none';
+    nameRowLeft.style.display = 'none';
     editInput.style.display = 'block';
     editInput.focus();
     editInput.select();
@@ -182,9 +186,10 @@ function saveCategoryEdit(index) {
 }
 
 function cancelCategoryEdit(index) {
-  const display = document.getElementById(`cat-display-${index}`);
+  const card = document.querySelector(`.category-card[data-index="${index}"]`);
+  const nameRowLeft = card.querySelector('.name-row-left');
   const editInput = document.getElementById(`cat-edit-${index}`);
-  display.style.display = 'block';
+  nameRowLeft.style.display = 'flex';
   editInput.style.display = 'none';
   editInput.value = categories[index];
 }

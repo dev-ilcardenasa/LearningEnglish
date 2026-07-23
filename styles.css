@@ -843,6 +843,15 @@ select {
   display: flex;
   gap: 10px;
   align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.name-row-left {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1;
 }
 
 .category-card .cat-badge {
@@ -937,6 +946,9 @@ select {
   }
   #page-categories header {
     padding: 32px 16px 20px;
+  }
+  .col-main {
+    padding: 0 12px 120px;
   }
   #fab {
     bottom: 20px;
