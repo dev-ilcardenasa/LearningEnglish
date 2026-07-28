@@ -4,6 +4,7 @@
 const KEY = 'mf_quotes_v2';
 const CATEGORIES_KEY = 'mf_categories_v2';
 const FILTER_KEY = 'mf_quotes_filter';
+const PAGE_KEY = 'mf_active_page';
 let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
 let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '["General"]');
 let speaking = null;
@@ -123,6 +124,7 @@ function addCategory() {
   saveCategories();
   input.value = '';
   renderCategories();
+  renderQuotes();
   showToast(`✅ Category "${value}" added`);
 }
 
@@ -197,29 +199,37 @@ function cancelCategoryEdit(index) {
 function deleteCategory(index) {
   const catName = categories[index];
   const quotesInCategory = quotes.filter(q => q.category === catName).length;
+  const otherCategories = categories.filter((_, i) => i !== index);
+  const hasOtherCategories = otherCategories.length > 0;
 
   let message = `Are you sure you want to delete "${catName}"?`;
   if (quotesInCategory > 0) {
-    message += ` ${quotesInCategory} quote(s) will be moved to "General".`;
+    if (hasOtherCategories) {
+      const targetCat = otherCategories[0];
+      message += ` ${quotesInCategory} quote(s) will be moved to "${targetCat}".`;
+    } else {
+      message += ` ${quotesInCategory} quote(s) will be permanently deleted since no other categories exist.`;
+    }
   }
 
   if (!confirm(message)) return;
 
-  // Move quotes to General
-  quotes = quotes.map(q => {
-    if (q.category === catName) {
-      q.category = 'General';
+  if (quotesInCategory > 0) {
+    if (hasOtherCategories) {
+      const targetCat = otherCategories[0];
+      quotes = quotes.map(q => {
+        if (q.category === catName) {
+          q.category = targetCat;
+        }
+        return q;
+      });
+    } else {
+      quotes = quotes.filter(q => q.category !== catName);
     }
-    return q;
-  });
-  save();
-
-  // Remove category
-  categories.splice(index, 1);
-  // Ensure "General" is always present
-  if (!categories.includes('General')) {
-    categories.unshift('General');
+    save();
   }
+
+  categories.splice(index, 1);
 
   saveCategories();
   renderCategories();
@@ -299,6 +309,9 @@ function showPage(page) {
     renderCategories();
   }
 
+  // Persist active page so it's restored after reload
+  localStorage.setItem(PAGE_KEY, page);
+
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -333,13 +346,32 @@ function searchYarnManual() {
 function saveQuote() {
   const rawText = document.getElementById('inp-text').value;
   const trimmedText = rawText.trim();
-  const category = document.getElementById('inp-category').value || 'General';
   const editId = document.getElementById('edit-id').value;
 
   if (!trimmedText) {
     showToast('⚠️ Type a phrase first');
     return;
   }
+
+  if (!categories.length) {
+    showToast('⚠️ You must create a category first');
+    return;
+  }
+
+  // Duplicate check: compare trimmed + case-insensitive text against all phrases
+  // When editing, skip the current phrase being edited (allow same-text saves)
+  const normalizedText = trimmedText.toLowerCase();
+  const duplicate = quotes.find(q => {
+    const isSame = q.text.trim().toLowerCase() === normalizedText;
+    if (!editId) return isSame;
+    return isSame && q.id !== Number(editId);
+  });
+  if (duplicate) {
+    showToast('⚠️ That phrase already exists in the system');
+    return;
+  }
+
+  const category = document.getElementById('inp-category').value || categories[0];
 
   if (editId) {
     // Edit existing phrase
@@ -422,6 +454,12 @@ function selectChip(cat) {
 }
 
 function openModal(editId = null) {
+  if (!editId && !categories.length) {
+    showToast('⚠️ You must create a category first');
+    showPage('categories');
+    return;
+  }
+
   const titleEl = document.getElementById('modal-title');
   const saveBtn = document.getElementById('modal-save-btn');
   let currentCat = '';
@@ -440,9 +478,9 @@ function openModal(editId = null) {
     document.getElementById('edit-id').value = '';
     document.getElementById('inp-text').value = '';
     
-    // Default to the current filter if one is selected, otherwise first category or General
+    // Default to the current filter if one is selected, otherwise first available category
     const activeFilter = document.getElementById('filter-cat').value;
-    currentCat = activeFilter || categories[0] || 'General';
+    currentCat = activeFilter || categories[0] || '';
   }
 
   document.getElementById('inp-category').value = currentCat;
@@ -522,6 +560,12 @@ function onSearchInput() {
   renderQuotes();
 }
 
+function onFilterChange() {
+  const filterEl = document.getElementById('filter-cat');
+  localStorage.setItem(FILTER_KEY, filterEl.value);
+  renderQuotes();
+}
+
 function clearSearch() {
   const searchInput = document.getElementById('search');
   searchInput.value = '';
@@ -533,15 +577,17 @@ function clearSearch() {
 function renderQuotes() {
   const search = document.getElementById('search').value.toLowerCase();
   const filterEl = document.getElementById('filter-cat');
-  const cat = filterEl.value;
 
-  // Save current filter to localStorage
-  localStorage.setItem(FILTER_KEY, cat);
-
-  // Update category filter dropdown using the categories array (preserves user order)
-  const cur = filterEl.value;
+  // Rebuild category filter dropdown so ALL categories (including newly added) are present
   filterEl.innerHTML = '<option value="">All categories</option>' +
-    categories.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('');
+    categories.map(c => `<option value="${c}">${c}</option>`).join('');
+
+  // Always use localStorage as the single source of truth for the active filter.
+  // Both manual onchange (onFilterChange) and programmatic changes (viewPhrasesInCategory)
+  // write to localStorage BEFORE renderQuotes is called — so this is always correct.
+  const storedFilter = localStorage.getItem(FILTER_KEY) || '';
+  filterEl.value = categories.includes(storedFilter) || storedFilter === '' ? storedFilter : '';
+  const cat = filterEl.value;
 
   // Filter phrases
   const filtered = quotes.filter(q =>
@@ -631,7 +677,7 @@ document.addEventListener('keydown', e => {
 // Initialization
 window.speechSynthesis.onvoiceschanged = () => { };
 
-// Initialize categories: deduplicate case-insensitively, merge quotes, ensure General is first
+// Initialize categories: deduplicate case-insensitively, merge quotes from phrases
 const normalizedCategoriesMap = new Map(); // key: lowercase category name, value: original category name
 
 // Step 1: Process existing categories, deduplicating case-insensitively and keeping the first occurrence
@@ -662,52 +708,15 @@ uniqueQuoteCategories.forEach(cat => {
   }
 });
 
-// Step 3: Create the final categories array from the map's values
+// Step 3: Create the final categories array from the map's values (preserves user-defined order and empty categories)
 categories = Array.from(normalizedCategoriesMap.values());
-
-// Step 3.5: Remove any categories that have zero phrases (except General)
-categories = categories.filter(cat => {
-  if (cat.toLowerCase() === 'general') return true;
-  const count = quotes.filter(q => q.category === cat).length;
-  return count > 0;
-});
-
-// Step 4: Ensure "General" is present and is the first item
-const normalizedGeneral = 'general'.toLowerCase();
-if (!normalizedCategoriesMap.has(normalizedGeneral)) {
-  categories.unshift('General');
-} else {
-  // If General is present (in any case), move it to first position and ensure it's capitalized as "General"
-  const generalEntry = normalizedCategoriesMap.get(normalizedGeneral);
-  if (generalEntry !== 'General') {
-    // Rename all quotes using the old case to "General"
-    quotes = quotes.map(q => {
-      if (q.category === generalEntry) {
-        q.category = 'General';
-      }
-      return q;
-    });
-  }
-  // Remove the existing general entry and add "General" as first item
-  const generalIndex = categories.findIndex(c => c.toLowerCase() === normalizedGeneral);
-  if (generalIndex !== -1) {
-    categories.splice(generalIndex, 1);
-  }
-  categories.unshift('General');
-}
 
 saveCategories();
 save();
 
-// Load saved filter and populate categories before rendering
-const savedFilter = localStorage.getItem(FILTER_KEY);
-if (savedFilter) {
-  const filterEl = document.getElementById('filter-cat');
-  if (categories.includes(savedFilter)) {
-    filterEl.innerHTML = '<option value="">All categories</option>' +
-      categories.map(c => `<option value="${c}"${c === savedFilter ? ' selected' : ''}>${c}</option>`).join('');
-    filterEl.value = savedFilter;
-  }
-}
-
+// Render everything (filter dropdown is auto-populated from localStorage by renderQuotes)
 renderQuotes();
+
+// Restore last active page (default to 'collection' if none saved)
+const savedPage = localStorage.getItem(PAGE_KEY) || 'collection';
+showPage(savedPage);

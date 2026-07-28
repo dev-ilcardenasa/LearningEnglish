@@ -49,7 +49,6 @@
   <div class="page active" id="page-collection">
     <header>
       <div class="pill-tag">✦ Your personal collection</div>
-      <h1>Learning English</h1>
     </header>
 
     <div class="col-main">
@@ -59,7 +58,7 @@
           <input type="text" id="search" placeholder="Search phrases..." oninput="onSearchInput()" />
           <button id="clear-search" class="clear-btn" onclick="clearSearch()" aria-label="Clear search">✕</button>
         </div>
-        <select id="filter-cat" onchange="renderQuotes()">
+        <select id="filter-cat" onchange="onFilterChange()">
           <option value="">All categories</option>
         </select>
       </div>
@@ -73,8 +72,7 @@
   <!-- PÁGINA 2: GESTOR DE CATEGORÍAS -->
   <div class="page" id="page-categories">
     <header>
-      <div class="pill-tag">✦ Organize your collection</div>
-      <h1>Categories</h1>
+      <div class="pill-tag pill-tag-green">✦ Organize your collection</div>
     </header>
     
     <div class="col-main">
@@ -122,7 +120,7 @@
       <h2 id="modal-title">New <span>phrase</span></h2>
       
       <input type="hidden" id="edit-id" value="" />
-      <input type="hidden" id="inp-category" value="General" />
+      <input type="hidden" id="inp-category" value="" />
       
       <div class="field-group">
         <textarea id="inp-text" placeholder="Type or paste your phrase here..." maxlength="10000"></textarea>

@@ -134,20 +134,8 @@ nav {
 
 /* ── PAGE 1: MY COLLECTION ── */
 #page-collection header {
-  padding: 48px 24px 28px;
+  padding: 36px 24px 20px;
   text-align: center;
-}
-
-#page-collection h1 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(1.8rem, 6vw, 3rem);
-  letter-spacing: -1px;
-  line-height: 1.1;
-  background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .pill-tag {
@@ -162,6 +150,12 @@ nav {
   text-transform: uppercase;
   padding: 5px 14px;
   border-radius: 30px;
+}
+
+.pill-tag-green {
+  background: rgba(93, 224, 197, .12);
+  border-color: rgba(93, 224, 197, .3);
+  color: var(--accent2);
 }
 
 .col-main {
@@ -806,20 +800,8 @@ select {
 /* Media Queries */
 /* ── CATEGORIES PAGE STYLES ── */
 #page-categories header {
-  padding: 48px 24px 28px;
+  padding: 36px 24px 20px;
   text-align: center;
-}
-
-#page-categories h1 {
-  font-family: 'Syne', sans-serif;
-  font-weight: 800;
-  font-size: clamp(1.8rem, 6vw, 3rem);
-  letter-spacing: -1px;
-  line-height: 1.1;
-  background: linear-gradient(135deg, #fff 30%, var(--accent2) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .categories-grid {
@@ -942,10 +924,10 @@ select {
 
 @media(max-width:600px) {
   #page-collection header {
-    padding: 32px 16px 20px;
+    padding: 28px 16px 16px;
   }
   #page-categories header {
-    padding: 32px 16px 20px;
+    padding: 28px 16px 16px;
   }
   .col-main {
     padding: 0 12px 120px;
