@@ -4,7 +4,6 @@
 const KEY = 'mf_quotes_v2';
 const CATEGORIES_KEY = 'mf_categories_v2';
 const FILTER_KEY = 'mf_quotes_filter';
-const PAGE_KEY = 'mf_active_page';
 let quotes = JSON.parse(localStorage.getItem(KEY) || '[]');
 let categories = JSON.parse(localStorage.getItem(CATEGORIES_KEY) || '["General"]');
 let speaking = null;
@@ -292,7 +291,7 @@ const PLAY_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="currentC
 /**
  * NAVEGACIÓN
  */
-function showPage(page) {
+function showPage(page, fromHistory = false) {
   // Hide all pages and deactivate tabs
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
@@ -309,8 +308,16 @@ function showPage(page) {
     renderCategories();
   }
 
-  // Persist active page so it's restored after reload
-  localStorage.setItem(PAGE_KEY, page);
+  // Browser history integration: push a new state ONLY when the user actively clicks a tab
+  // (never when navigating via back/forward buttons, which would create duplicate history entries)
+  if (!fromHistory) {
+    const url = '#' + page;
+    const state = { page };
+    // Avoid duplicate pushes if user clicks the same tab repeatedly
+    if (history.state?.page !== page) {
+      history.pushState(state, '', url);
+    }
+  }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -717,6 +724,31 @@ save();
 // Render everything (filter dropdown is auto-populated from localStorage by renderQuotes)
 renderQuotes();
 
-// Restore last active page (default to 'collection' if none saved)
-const savedPage = localStorage.getItem(PAGE_KEY) || 'collection';
-showPage(savedPage);
+// --- Browser history + deep-link initialization ---
+// Rule: close tab and reopen = always MY COLL (no persistence across full sessions)
+// But: if URL has a #hash (e.g. user bookmarked #categories), honor it once
+// Also: if user refreshes (same session), the URL hash + history stay intact
+// CRITICAL: do NOT use replaceState on the very first history entry — this way the
+// user can press Back enough times to leave the app and go back to whatever page
+// they were on before opening EngLearn (just like WhatsApp Web).
+const validPages = ['collection', 'categories', 'yarn'];
+const initialPageFromHash = window.location.hash.replace('#', '');
+const initialPage = validPages.includes(initialPageFromHash) ? initialPageFromHash : 'collection';
+
+showPage(initialPage, true); // fromHistory=true to avoid duplicate push
+
+// Listen to Back/Forward buttons
+window.addEventListener('popstate', (e) => {
+  // e.state is NULL when returning to the very first entry the browser had when
+  // EngLearn opened (entry 0, no pushState applied). That entry represents the
+  // "root" of the app = MY COLL, and the NEXT Back press will exit EngLearn to
+  // the previous website/new-tab page automatically.
+  const page = e.state?.page;
+  if (validPages.includes(page)) {
+    showPage(page, true);
+  } else if (!page && validPages.includes('collection')) {
+    // Root entry (no state) → treat as MY COLL. This ensures the UI stays in sync
+    // with the history position, and one more Back press will then exit the app.
+    showPage('collection', true);
+  }
+});
